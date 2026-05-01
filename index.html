@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Timeregistrering</title>
+  <link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#2563eb">
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f4f6f8;
+      color: #1f2937;
+    }
+
+    .container {
+      max-width: 560px;
+      margin: 0 auto;
+      padding: 18px;
+    }
+
+    h1 { font-size: 1.6rem; margin-bottom: 4px; }
+    h2 { font-size: 1.2rem; margin-top: 0; }
+
+    .subtitle {
+      color: #6b7280;
+      margin-bottom: 20px;
+    }
+
+    .card {
+      background: white;
+      border-radius: 16px;
+      padding: 18px;
+      box-shadow: 0 8px 22px rgba(0,0,0,0.08);
+      margin-bottom: 18px;
+    }
+
+    label {
+      display: block;
+      margin-top: 14px;
+      margin-bottom: 6px;
+      font-weight: bold;
+      font-size: 0.95rem;
+    }
+
+    input, textarea, select, button {
+      width: 100%;
+      font-size: 1rem;
+      padding: 13px;
+      border-radius: 12px;
+      border: 1px solid #d1d5db;
+    }
+
+    textarea {
+      min-height: 80px;
+      resize: vertical;
+    }
+
+    button {
+      border: none;
+      margin-top: 18px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .primary { background: #2563eb; color: white; }
+    .secondary { background: #e5e7eb; color: #111827; }
+    .danger { background: #fee2e2; color: #991b1b; }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .check-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 14px;
+      font-weight: bold;
+    }
+
+    .check-row input {
+      width: auto;
+      transform: scale(1.25);
+    }
+
+    .summary {
+      margin-top: 16px;
+      padding: 12px;
+      background: #eff6ff;
+      border-radius: 12px;
+      line-height: 1.55;
+    }
+
+    .summary strong {
+      font-size: 1.15rem;
+    }
+
+    .entry {
+      padding: 14px;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    .entry:last-child { border-bottom: none; }
+    .entry strong { display: block; margin-bottom: 4px; }
+
+    .small {
+      color: #6b7280;
+      font-size: 0.9rem;
+    }
+
+    .actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .totals {
+      background: #f9fafb;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      padding: 12px;
+      margin-bottom: 12px;
+      line-height: 1.5;
+    }
+
+    @media (max-width: 420px) {
+      .container { padding: 12px; }
+      h1 { font-size: 1.35rem; }
+      .grid-2 { grid-template-columns: 1fr; gap: 0; }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="container">
+    <h1>Timeregistrering</h1>
+    <div class="subtitle">Mobilvennlig skjema for timer, reise, kjøring, overtid og fakturering.</div>
+
+    <section class="card">
+      <form id="timeForm">
+        <label for="date">Dato</label>
+        <input type="date" id="date" required />
+
+        <label for="customer">Kunde / prosjekt</label>
+        <input type="text" id="customer" placeholder="F.eks. Kommuneprosjekt" required />
+
+        <label for="task">Arbeidstype</label>
+        <select id="task">
+          <option>Azure / Cloud</option>
+          <option>DevOps</option>
+          <option>Møte</option>
+          <option>Dokumentasjon</option>
+          <option>Support</option>
+          <option>Reise</option>
+          <option>Annet</option>
+        </select>
+
+        <div class="check-row">
+          <input type="checkbox" id="billable" checked />
+          <span>Fakturerbar</span>
+        </div>
+
+        <div class="grid-2">
+          <div>
+            <label for="start">Start</label>
+            <input type="time" id="start" required />
+          </div>
+          <div>
+            <label for="end">Slutt</label>
+            <input type="time" id="end" required />
+          </div>
+        </div>
+
+        <label for="breakMinutes">Pause i minutter</label>
+        <input type="number" id="breakMinutes" value="30" min="0" step="5" />
+
+        <label for="hourlyRate">Timepris eks. mva</label>
+        <input type="number" id="hourlyRate" value="1100" min="0" step="50" />
+
+        <label for="travelHours">Reisetid i timer</label>
+        <input type="number" id="travelHours" value="0" min="0" step="0.25" />
+
+        <label for="travelRate">Timepris reise eks. mva</label>
+        <input type="number" id="travelRate" value="0" min="0" step="50" />
+
+        <label for="drivingKm">Kjøring i km</label>
+        <input type="number" id="drivingKm" value="0" min="0" step="1" />
+
+        <label for="kmRate">Kilometersats</label>
+        <input type="number" id="kmRate" value="4.90" min="0" step="0.10" />
+
+        <label for="comment">Kommentar</label>
+        <textarea id="comment" placeholder="Hva ble gjort?"></textarea>
+
+        <div class="summary" id="calculatedSummary">
+          <strong>Sum: 0 kr</strong><br />
+          Timer: 0,00
+        </div>
+
+        <button class="primary" type="submit">Lagre timer</button>
+      </form>
+    </section>
+
+    <section class="card">
+      <h2>Registrerte timer</h2>
+      <div class="totals" id="totals"></div>
+      <div id="entries"></div>
+      <div class="actions">
+        <button id="exportButton" class="secondary" type="button">Eksporter CSV</button>
+        <button id="clearButton" class="danger" type="button">Tøm liste</button>
+      </div>
+      <button id="copyButton" class="secondary" type="button">Kopier til Excel</button>
+      <textarea id="excelOutput" readonly style="display:none; margin-top:12px; min-height:160px;"></textarea>
+    </section>
+  </main>
+
+  <script>
+    const form = document.getElementById('timeForm');
+    const dateInput = document.getElementById('date');
+    const customerInput = document.getElementById('customer');
+    const startInput = document.getElementById('start');
+    const endInput = document.getElementById('end');
+    const calculatedSummary = document.getElementById('calculatedSummary');
+    const entriesDiv = document.getElementById('entries');
+    const totalsDiv = document.getElementById('totals');
+
+    dateInput.valueAsDate = new Date();
+    let entries = JSON.parse(localStorage.getItem('timeEntries') || '[]');
+
+    function toNumber(id) {
+      return Number(document.getElementById(id).value || 0);
+    }
+
+    function formatHours(value) {
+      return Number(value || 0).toFixed(2).replace('.', ',');
+    }
+
+    function formatMoney(value) {
+      return Math.round(Number(value || 0)).toLocaleString('no-NO') + ' kr';
+    }
+
+    function timeToMinutes(value) {
+      if (!value || !value.includes(':')) return 0;
+      const parts = value.split(':').map(Number);
+      return parts[0] * 60 + parts[1];
+    }
+
+    function normalizeText(value) {
+      return String(value || '').trim().toLowerCase();
+    }
+
+    function hasDuplicateOrOverlap(date, customer, start, end) {
+      let newStart = timeToMinutes(start);
+      let newEnd = timeToMinutes(end);
+
+      if (newEnd <= newStart) {
+        newEnd += 24 * 60;
+      }
+
+      return entries.some(entry => {
+        if (entry.date !== date) return false;
+        if (normalizeText(entry.customer) !== normalizeText(customer)) return false;
+
+        let existingStart = timeToMinutes(entry.start);
+        let existingEnd = timeToMinutes(entry.end);
+
+        if (existingEnd <= existingStart) {
+          existingEnd += 24 * 60;
+        }
+
+        return newStart < existingEnd && newEnd > existingStart;
+      });
+    }
+
+    function calculateOvertime(start, end, breakMinutes) {
+      if (!start || !end) {
+        return { normalMinutes: 0, overtime50Minutes: 0, overtime100Minutes: 0 };
+      }
+
+      let startTotal = timeToMinutes(start);
+      let endTotal = timeToMinutes(end);
+
+      if (endTotal < startTotal) {
+        endTotal += 24 * 60;
+      }
+
+      let remainingBreak = breakMinutes;
+      let normalMinutes = 0;
+      let overtime50Minutes = 0;
+      let overtime100Minutes = 0;
+
+      for (let minute = startTotal; minute < endTotal; minute++) {
+        if (remainingBreak > 0) {
+          remainingBreak--;
+          continue;
+        }
+
+        const minuteOfDay = minute % 1440;
+
+        if (minuteOfDay >= 21 * 60) {
+          overtime100Minutes++;
+        } else if (minuteOfDay >= 16 * 60) {
+          overtime50Minutes++;
+        } else {
+          normalMinutes++;
+        }
+      }
+
+      return { normalMinutes, overtime50Minutes, overtime100Minutes };
+    }
+
+    function calculateEntryPreview() {
+      const billable = document.getElementById('billable').checked;
+      const hourlyRate = toNumber('hourlyRate');
+      const travelHours = toNumber('travelHours');
+      const travelRate = toNumber('travelRate');
+      const drivingKm = toNumber('drivingKm');
+      const kmRate = toNumber('kmRate');
+      const breakMinutes = toNumber('breakMinutes');
+
+      const overtime = calculateOvertime(startInput.value, endInput.value, breakMinutes);
+
+      const normalHours = overtime.normalMinutes / 60;
+      const overtime50Hours = overtime.overtime50Minutes / 60;
+      const overtime100Hours = overtime.overtime100Minutes / 60;
+      const totalWorkHours = normalHours + overtime50Hours + overtime100Hours;
+
+      const normalAmount = normalHours * hourlyRate;
+      const overtime50Amount = overtime50Hours * hourlyRate * 1.5;
+      const overtime100Amount = overtime100Hours * hourlyRate * 2;
+      const travelAmount = travelHours * travelRate;
+      const drivingAmount = drivingKm * kmRate;
+
+      const totalAmount = billable
+        ? normalAmount + overtime50Amount + overtime100Amount + travelAmount + drivingAmount
+        : 0;
+
+      calculatedSummary.innerHTML = `
+        <strong>Sum: ${formatMoney(totalAmount)}</strong><br>
+        Arbeid: ${formatHours(totalWorkHours)} timer<br>
+        Vanlig tid: ${formatHours(normalHours)} t<br>
+        Overtid 50 %: ${formatHours(overtime50Hours)} t<br>
+        Overtid 100 %: ${formatHours(overtime100Hours)} t<br>
+        Reise: ${formatHours(travelHours)} t / Kjøring: ${drivingKm} km<br>
+        ${billable ? 'Fakturerbar' : 'Ikke fakturerbar'}
+      `;
+
+      return {
+        billable,
+        hourlyRate,
+        travelHours,
+        travelRate,
+        drivingKm,
+        kmRate,
+        normalHours,
+        overtime50Hours,
+        overtime100Hours,
+        totalWorkHours,
+        normalAmount,
+        overtime50Amount,
+        overtime100Amount,
+        travelAmount,
+        drivingAmount,
+        totalAmount
+      };
+    }
+
+    function saveEntries() {
+      localStorage.setItem('timeEntries', JSON.stringify(entries));
+    }
+
+    function renderTotals() {
+      const totals = entries.reduce((sum, entry) => {
+        sum.work += entry.totalWorkHours || 0;
+        sum.normal += entry.normalHours || 0;
+        sum.ot50 += entry.overtime50Hours || 0;
+        sum.ot100 += entry.overtime100Hours || 0;
+        sum.travel += entry.travelHours || 0;
+        sum.km += entry.drivingKm || 0;
+        sum.amount += entry.totalAmount || 0;
+        return sum;
+      }, {
+        work: 0,
+        normal: 0,
+        ot50: 0,
+        ot100: 0,
+        travel: 0,
+        km: 0,
+        amount: 0
+      });
+
+      totalsDiv.innerHTML = `
+        <strong>Total:</strong> ${formatMoney(totals.amount)}<br>
+        Arbeid: ${formatHours(totals.work)} t | Reise: ${formatHours(totals.travel)} t | Kjøring: ${totals.km} km<br>
+        Vanlig: ${formatHours(totals.normal)} t | 50 %: ${formatHours(totals.ot50)} t | 100 %: ${formatHours(totals.ot100)} t
+      `;
+    }
+
+    function renderEntries() {
+      renderTotals();
+
+      if (entries.length === 0) {
+        entriesDiv.innerHTML = '<p class="small">Ingen timer registrert ennå.</p>';
+        return;
+      }
+
+      entriesDiv.innerHTML = entries.map((entry, index) => `
+        <div class="entry">
+          <strong>${entry.date} - ${entry.customer}</strong>
+          <div>${entry.task}: ${formatHours(entry.totalWorkHours)} arbeidstimer</div>
+          <div class="small">${entry.start}–${entry.end}, pause ${entry.breakMinutes} min</div>
+          <div class="small">Vanlig ${formatHours(entry.normalHours)} t | OT 50 % ${formatHours(entry.overtime50Hours)} t | OT 100 % ${formatHours(entry.overtime100Hours)} t</div>
+          <div class="small">Reise ${formatHours(entry.travelHours)} t | Kjøring ${entry.drivingKm} km</div>
+          <div><strong>${formatMoney(entry.totalAmount)}</strong> ${entry.billable ? '' : '(ikke fakturerbar)'}</div>
+          ${entry.comment ? `<div class="small">${entry.comment}</div>` : ''}
+          <button class="danger deleteButton" type="button" data-index="${index}">Slett</button>
+        </div>
+      `).join('');
+
+      document.querySelectorAll('.deleteButton').forEach(button => {
+        button.addEventListener('click', () => {
+          const index = Number(button.dataset.index);
+          entries.splice(index, 1);
+          saveEntries();
+          renderEntries();
+        });
+      });
+    }
+
+    function clearEntries() {
+      if (!confirm('Vil du slette alle registrerte timer?')) {
+        return;
+      }
+
+      entries = [];
+      saveEntries();
+      renderEntries();
+    }
+
+    function buildCsvContent() {
+      const header = [
+        'Dato',
+        'Kunde/prosjekt',
+        'Arbeidstype',
+        'Fakturerbar',
+        'Start',
+        'Slutt',
+        'Pause minutter',
+        'Vanlige timer',
+        'Overtid 50 timer',
+        'Overtid 100 timer',
+        'Arbeidstimer totalt',
+        'Timepris',
+        'Reisetimer',
+        'Reisepris',
+        'Kjøring km',
+        'Kilometersats',
+        'Beløp totalt',
+        'Kommentar'
+      ];
+
+      const rows = entries.map(e => [
+        e.date,
+        e.customer,
+        e.task,
+        e.billable ? 'Ja' : 'Nei',
+        e.start,
+        e.end,
+        e.breakMinutes,
+        formatHours(e.normalHours),
+        formatHours(e.overtime50Hours),
+        formatHours(e.overtime100Hours),
+        formatHours(e.totalWorkHours),
+        e.hourlyRate,
+        formatHours(e.travelHours),
+        e.travelRate,
+        e.drivingKm,
+        e.kmRate,
+        Math.round(e.totalAmount),
+        e.comment
+      ]);
+
+      return [header, ...rows]
+        .map(row => row.map(value => `"${String(value ?? '').replaceAll('"', '""')}"`).join(';'))
+        .join('\n');
+    }
+
+    function exportCsv() {
+      if (entries.length === 0) {
+        alert('Ingen timer å eksportere. Lagre en registrering først.');
+        return;
+      }
+
+      const csv = buildCsvContent();
+      const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+
+      link.href = url;
+      link.download = 'timeregistrering.csv';
+
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      URL.revokeObjectURL(url);
+    }
+
+    function copyForExcel() {
+      if (entries.length === 0) {
+        alert('Ingen timer å kopiere. Lagre en registrering først.');
+        return;
+      }
+
+      const csv = buildCsvContent();
+      const output = document.getElementById('excelOutput');
+
+      output.style.display = 'block';
+      output.value = csv;
+      output.focus();
+      output.select();
+
+      document.execCommand('copy');
+
+      alert('Data er kopiert. Åpne Excel og lim inn med Ctrl+V.');
+    }
+
+    form.addEventListener('submit', event => {
+      event.preventDefault();
+
+      const customerValue = customerInput.value.trim();
+      const taskValue = document.getElementById('task').value;
+
+      if (!dateInput.value || !customerValue || !startInput.value || !endInput.value) {
+        alert('Fyll ut dato, kunde/prosjekt, start og slutt.');
+        return;
+      }
+
+      if (hasDuplicateOrOverlap(dateInput.value, customerValue, startInput.value, endInput.value)) {
+        alert('Denne timeregistreringen overlapper med en registrering som allerede finnes for samme dato og kunde. Den ble ikke lagret på nytt.');
+        return;
+      }
+
+      const preview = calculateEntryPreview();
+
+      const entry = {
+        date: dateInput.value,
+        customer: customerValue,
+        task: taskValue,
+        billable: preview.billable,
+        start: startInput.value,
+        end: endInput.value,
+        breakMinutes: toNumber('breakMinutes'),
+        normalHours: preview.normalHours,
+        overtime50Hours: preview.overtime50Hours,
+        overtime100Hours: preview.overtime100Hours,
+        totalWorkHours: preview.totalWorkHours,
+        hourlyRate: preview.hourlyRate,
+        travelHours: preview.travelHours,
+        travelRate: preview.travelRate,
+        drivingKm: preview.drivingKm,
+        kmRate: preview.kmRate,
+        normalAmount: preview.normalAmount,
+        overtime50Amount: preview.overtime50Amount,
+        overtime100Amount: preview.overtime100Amount,
+        travelAmount: preview.travelAmount,
+        drivingAmount: preview.drivingAmount,
+        totalAmount: preview.totalAmount,
+        comment: document.getElementById('comment').value.trim()
+      };
+
+      entries.unshift(entry);
+      saveEntries();
+      renderEntries();
+
+      form.reset();
+
+      dateInput.valueAsDate = new Date();
+      document.getElementById('billable').checked = true;
+      document.getElementById('breakMinutes').value = 30;
+      document.getElementById('hourlyRate').value = 1100;
+      document.getElementById('travelHours').value = 0;
+      document.getElementById('travelRate').value = 0;
+      document.getElementById('drivingKm').value = 0;
+      document.getElementById('kmRate').value = 4.90;
+
+      calculateEntryPreview();
+
+      alert('Timer lagret.');
+      startInput.focus();
+    });
+
+    startInput.addEventListener('change', () => {
+      calculateEntryPreview();
+      endInput.focus();
+      endInput.showPicker?.();
+    });
+
+    [
+      'end',
+      'breakMinutes',
+      'hourlyRate',
+      'travelHours',
+      'travelRate',
+      'drivingKm',
+      'kmRate',
+      'billable'
+    ].forEach(id => {
+      document.getElementById(id).addEventListener('input', calculateEntryPreview);
+      document.getElementById(id).addEventListener('change', calculateEntryPreview);
+    });
+
+    document.getElementById('exportButton').addEventListener('click', exportCsv);
+    document.getElementById('copyButton').addEventListener('click', copyForExcel);
+    document.getElementById('clearButton').addEventListener('click', clearEntries);
+
+    renderEntries();
+    calculateEntryPreview();
+  </script>
+  <script>
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("./service-worker.js");
+  }
+</script>
+</body>
+</html>
