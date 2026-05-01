@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Timeregistrering</title>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f7fb;
+      margin: 0;
+      padding: 0;
+      color: #1f2937;
+    }
+
+    .container {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 16px;
+    }
+
+    .card {
+      background: white;
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+    }
+
+    h1 {
+      margin-top: 0;
+      color: #0f3a5f;
+      font-size: 28px;
+    }
+
+    h2 {
+      font-size: 18px;
+      margin-top: 24px;
+      color: #0f3a5f;
+    }
+
+    label {
+      display: block;
+      margin-top: 14px;
+      font-weight: bold;
+    }
+
+    input, select, textarea, button {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 12px;
+      margin-top: 6px;
+      border-radius: 10px;
+      border: 1px solid #cbd5e1;
+      font-size: 16px;
+    }
+
+    textarea {
+      min-height: 80px;
+      resize: vertical;
+    }
+
+    button {
+      background: #0f3a5f;
+      color: white;
+      border: none;
+      cursor: pointer;
+      font-weight: bold;
+      margin-top: 18px;
+    }
+
+    button:hover {
+      background: #145487;
+    }
+
+    .secondary {
+      background: #64748b;
+    }
+
+    .danger {
+      background: #b91c1c;
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .message {
+      margin-top: 16px;
+      padding: 12px;
+      border-radius: 10px;
+      display: none;
+      font-weight: bold;
+    }
+
+    .ok {
+      background: #dcfce7;
+      color: #166534;
+    }
+
+    .warning {
+      background: #fef3c7;
+      color: #92400e;
+    }
+
+    .error {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    table {
+      width: 100%;
+      margin-top: 20px;
+      border-collapse: collapse;
+      background: white;
+      font-size: 14px;
+    }
+
+    th, td {
+      padding: 8px;
+      border-bottom: 1px solid #e5e7eb;
+      text-align: left;
+    }
+
+    th {
+      background: #e2e8f0;
+    }
+
+    .summary {
+      background: #eef6ff;
+      padding: 14px;
+      border-radius: 12px;
+      margin-top: 18px;
+      line-height: 1.6;
+    }
+
+    @media (max-width: 640px) {
+      .row {
+        grid-template-columns: 1fr;
+      }
+
+      h1 {
+        font-size: 24px;
+      }
+
+      table {
+        font-size: 12px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <div class="card">
+      <h1>Timeregistrering</h1>
+
+      <!-- KNAPPER -->
+      <
+<a href="index.html">
+  <button type="button">Timeregister</button>
+</a>
+
+<a href="kunderegister.html">
+  <button type="button">Kunderegister</button>
+</a>
+      <!-- TIMEREGISTER -->
+      <div id="timerSide">
+
+      <label for="dato">Dato</label>
+      <input type="date" id="dato" />
+
+      <label for="kunde">Kunde / oppdrag</label>
+      <input type="text" id="kunde" placeholder="Skriv kunde eller oppdrag" />
+
+      <div class="row">
+        <div>
+          <label for="start">Starttid</label>
+          <input type="time" id="start" />
+        </div>
+
+        <div>
+          <label for="slutt">Sluttid</label>
+          <input type="time" id="slutt" />
+        </div>
+      </div>
+
+      <label for="pause">Pause i minutter</label>
+      <input type="number" id="pause" value="0" min="0" />
+
+      <label for="timepris">Timepris</label>
+      <input type="number" id="timepris" value="1100" min="0" />
+
+      <label for="fakturerbar">Fakturerbar</label>
+      <select id="fakturerbar">
+        <option value="ja">Ja</option>
+        <option value="nei">Nei</option>
+      </select>
+
+      <label for="reise">Reise / kjøring km</label>
+      <input type="number" id="reise" value="0" min="0" />
+
+      <label for="kommentar">Kommentar</label>
+      <textarea id="kommentar"></textarea>
+
+      <button onclick="lagreTimer()">Lagre timer</button>
+      <button class="secondary" onclick="eksporterExcel()">Eksporter Excel</button>
+      <button class="danger" onclick="slettAlt()">Slett alt</button>
+
+      <div id="melding" class="message"></div>
+
+      <div class="summary" id="oppsummering">
+        Ingen timer registrert ennå.
+      </div>
+
+      </div>
+
+      <!-- KUNDEREGISTER -->
+      <div id="kunderSide" style="display:none;">
+        <h2>Kunderegister</h2>
+        <p>Her kommer kunderegister</p>
+        <button onclick="visSide('timerSide')">Tilbake</button>
+      </div>
+
+    </div>
+
+    <table id="tabell">
+      <thead>
+        <tr>
+          <th>Dato</th>
+          <th>Kunde</th>
+          <th>Start</th>
+          <th>Slutt</th>
+          <th>Timer</th>
+          <th>50%</th>
+          <th>100%</th>
+          <th>Beløp</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <script>
+    function visSide(sideId) {
+      document.getElementById("timerSide").style.display = "none";
+      document.getElementById("kunderSide").style.display = "none";
+      document.getElementById(sideId).style.display = "block";
+    }
+
+    let registreringer = JSON.parse(localStorage.getItem("registreringer")) || [];
+
+    document.addEventListener("DOMContentLoaded", function () {
+      document.getElementById("dato").valueAsDate = new Date();
+
+      document.getElementById("start").addEventListener("change", function () {
+        document.getElementById("slutt").focus();
+      });
+
+      visRegistreringer();
+    });
+
+    function visMelding(tekst, type) {
+      const melding = document.getElementById("melding");
+      melding.textContent = tekst;
+      melding.className = "message " + type;
+      melding.style.display = "block";
+    }
+
+    function beregnTimer(start, slutt, pauseMinutter) {
+      const [startTime, sluttTime] = [start, slutt].map(t => {
+        const [h, m] = t.split(":").map(Number);
+        return h * 60 + m;
+      });
+
+      let totalMinutter = sluttTime - startTime;
+
+      if (totalMinutter < 0) {
+        totalMinutter += 24 * 60;
+      }
+
+      totalMinutter -= pauseMinutter;
+
+      return Math.max(totalMinutter / 60, 0);
+    }
+
+    function beregnOvertid(start, slutt, pauseMinutter) {
+      let normal = 0;
+      let overtid50 = 0;
+      let overtid100 = 0;
+
+      const [startH, startM] = start.split(":").map(Number);
+      const [sluttH, sluttM] = slutt.split(":").map(Number);
+
+      let startMin = startH * 60 + startM;
+      let sluttMin = sluttH * 60 + sluttM;
+
+      if (sluttMin < startMin) {
+        sluttMin += 24 * 60;
+      }
+
+      let pauseIgjen = pauseMinutter;
+
+      for (let min = startMin; min < sluttMin; min += 15) {
+        if (pauseIgjen > 0) {
+          pauseIgjen -= 15;
+          continue;
+        }
+
+        const klokke = min % (24 * 60);
+
+        if (klokke >= 21 * 60 || klokke < 6 * 60) {
+          overtid100 += 0.25;
+        } else if (klokke >= 17 * 60 && klokke < 21 * 60) {
+          overtid50 += 0.25;
+        } else {
+          normal += 0.25;
+        }
+      }
+
+      return { normal, overtid50, overtid100 };
+    }
+
+    function finnesDobbeltregistrering(ny) {
+      return registreringer.some(r =>
+        r.dato === ny.dato &&
+        r.kunde.toLowerCase() === ny.kunde.toLowerCase() &&
+        (
+          (ny.start >= r.start && ny.start < r.slutt) ||
+          (ny.slutt > r.start && ny.slutt <= r.slutt) ||
+          (ny.start <= r.start && ny.slutt >= r.slutt)
+        )
+      );
+    }
+
+    function lagreTimer() {
+      const dato = document.getElementById("dato").value;
+      const kunde = document.getElementById("kunde").value.trim();
+      const start = document.getElementById("start").value;
+      const slutt = document.getElementById("slutt").value;
+      const pause = Number(document.getElementById("pause").value || 0);
+      const timepris = Number(document.getElementById("timepris").value || 1100);
+      const fakturerbar = document.getElementById("fakturerbar").value;
+      const reise = Number(document.getElementById("reise").value || 0);
+      const kommentar = document.getElementById("kommentar").value.trim();
+
+      if (!dato || !kunde || !start || !slutt) {
+        visMelding("Fyll ut dato, kunde, starttid og sluttid.", "error");
+        return;
+      }
+
+      const overtid = beregnOvertid(start, slutt, pause);
+
+      const belop =
+        fakturerbar === "ja"
+          ? (overtid.normal * timepris) +
+            (overtid.overtid50 * timepris * 1.5) +
+            (overtid.overtid100 * timepris * 2)
+          : 0;
+
+      const registrering = {
+        dato,
+        kunde,
+        start,
+        slutt,
+        pause,
+        timepris,
+        fakturerbar,
+        reise,
+        kommentar,
+        timer: beregnTimer(start, slutt, pause),
+        normal: overtid.normal,
+        overtid50: overtid.overtid50,
+        overtid100: overtid.overtid100,
+        belop
+      };
+
+      if (finnesDobbeltregistrering(registrering)) {
+        visMelding("Mulig dobbeltregistrering funnet.", "warning");
+        return;
+      }
+
+      registreringer.push(registrering);
+      localStorage.setItem("registreringer", JSON.stringify(registreringer));
+
+      visMelding("Timer lagret.", "ok");
+      nullstillSkjema();
+      visRegistreringer();
+    }
+
+    function nullstillSkjema() {
+      document.getElementById("dato").valueAsDate = new Date();
+      document.getElementById("kunde").value = "";
+      document.getElementById("start").value = "";
+      document.getElementById("slutt").value = "";
+      document.getElementById("pause").value = 0;
+      document.getElementById("timepris").value = 1100;
+      document.getElementById("fakturerbar").value = "ja";
+      document.getElementById("reise").value = 0;
+      document.getElementById("kommentar").value = "";
+      document.getElementById("start").focus();
+    }
+
+    function visRegistreringer() {
+      const tbody = document.querySelector("#tabell tbody");
+      tbody.innerHTML = "";
+
+      registreringer.forEach(r => {
+        const tr = document.createElement("tr");
+
+        tr.innerHTML = `
+          <td>${r.dato}</td>
+          <td>${r.kunde}</td>
+          <td>${r.start}</td>
+          <td>${r.slutt}</td>
+          <td>${r.timer.toFixed(2)}</td>
+          <td>${r.overtid50.toFixed(2)}</td>
+          <td>${r.overtid100.toFixed(2)}</td>
+          <td>${r.belop.toFixed(0)} kr</td>
+        `;
+
+        tbody.appendChild(tr);
+      });
+    }
+
+    function eksporterExcel() {
+      if (registreringer.length === 0) return;
+
+      let csv = "Dato;Kunde;Start;Slutt;Pause;Timer;Normal;Overtid50;Overtid100;Beløp\n";
+
+      registreringer.forEach(r => {
+        csv += `${r.dato};${r.kunde};${r.start};${r.slutt};${r.pause};${r.timer};${r.normal};${r.overtid50};${r.overtid100};${r.belop}\n`;
+      });
+
+      const blob = new Blob([csv], { type: "text/csv" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = "timer.csv";
+      link.click();
+    }
+
+    function slettAlt() {
+      if (!confirm("Slette alt?")) return;
+
+      registreringer = [];
+      localStorage.removeItem("registreringer");
+      visRegistreringer();
+    }
+  </script>
+</body>
+</html>
